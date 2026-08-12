@@ -1,0 +1,89 @@
+substitutions:
+  box_num: "1"
+  box_name: "Box ${box_num}"
+
+# Shared options anchor inside the package
+.filament_options: &filament_options
+  - "PLA"
+  - "PETG"
+  - "ASA"
+  - "HT-PLA"
+  - "ABS"
+  - "TPU"
+  - "PC"
+
+select:
+  - platform: template
+    name: "${box_name} Filament Type"
+    id: box_${box_num}_filament_type
+    optimistic: true
+    restore_value: true
+    options: *filament_options
+    initial_option: "PLA"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: box_${box_num}_filament_type_val
+            text: !lambda 'return x.c_str();'
+
+output:
+  - platform: template
+    id: box_${box_num}_dummy_r
+    type: float
+    write_action: []
+  - platform: template
+    id: box_${box_num}_dummy_g
+    type: float
+    write_action: []
+  - platform: template
+    id: box_${box_num}_dummy_b
+    type: float
+    write_action: []
+
+light:
+  - platform: rgb
+    name: "${box_name} Filament Color"
+    id: box_${box_num}_color
+    red: box_${box_num}_dummy_r
+    green: box_${box_num}_dummy_g
+    blue: box_${box_num}_dummy_b
+    default_transition_length: 0s
+    gamma_correct: 1.0
+    restore_mode: RESTORE_DEFAULT_ON
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: box_${box_num}_btn
+            border_color: !lambda |-
+              auto color = id(box_${box_num}_color).remote_values;
+
+              uint8_t r = static_cast<uint8_t>(color.get_red() * 255.0f);
+              uint8_t g = static_cast<uint8_t>(color.get_green() * 255.0f);
+              uint8_t b = static_cast<uint8_t>(color.get_blue() * 255.0f);
+
+              return lv_color_make(r, g, b);
+
+            border_width: 3
+            border_opa: COVER
+
+# Sensor for SHT45 (Assuming each box has its own multiplexed I2C address or bus)
+sensor:
+  - platform: sht4x
+    id: box_${box_num}_sht4x
+    i2c_id: mux_channel_${box_num}
+    temperature:
+      name: "${box_name} Temperature"
+      id: box_${box_num}_temp
+      on_value:
+        then:
+          - lvgl.label.update:
+              id: box_${box_num}_temp_val
+              text: !lambda 'return str_sprintf("%.1f°C", x);'
+    humidity:
+      name: "${box_name} Humidity"
+      id: box_${box_num}_hum
+      on_value:
+        then:
+          - lvgl.label.update:
+              id: box_${box_num}_hum_val
+              text: !lambda 'return str_sprintf("%.0f%%", x);'
