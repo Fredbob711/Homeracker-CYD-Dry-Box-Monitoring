@@ -17,6 +17,7 @@ Obligatory Reddit post explaining what I did:
 The project is built around a Hosyond ESP32S3 2.8" Touchscreen, TCA9548A multiplexer, and SHT45 temp/humidity sensors installed in the drybox.
 
 Links:
+
 CYD: https://www.amazon.com/dp/B0FKG7WRWV?th=1
 
 TCA9548A: https://www.amazon.com/dp/B0FDFQ94HB
