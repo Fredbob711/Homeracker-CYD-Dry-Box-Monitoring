@@ -1,0 +1,76 @@
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: arduino
+
+i2c:
+  - id: bus_a
+    sda: 16
+    scl: 15
+    scan: true
+
+spi:
+  - id: tft_bus
+    clk_pin: 12
+    mosi_pin: 11
+    miso_pin: 13
+
+output:
+  - id: backlight_pwm
+    platform: ledc
+    pin: 45
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "Status LED"
+    pin: 42
+    num_leds: 1
+    chipset: ws2812
+    rgb_order: GRB
+
+sensor:
+  - platform: adc
+    pin: 9
+    name: "Battery Voltage"
+    update_interval: 60s
+    attenuation: 11db
+    filters:
+      - multiply: 2.0 # Internal voltage divider usually requires a multiplier
+
+display:
+  - id: main_display
+    platform: mipi_spi
+    model: ili9341
+    dc_pin: GPIO46
+    cs_pin: GPIO10
+    invert_colors: true
+    dimensions:
+      width: 240
+      height: 320
+      offset_width: 0
+      offset_height: 0
+    auto_clear_enabled: false
+    update_interval: never
+
+touchscreen:
+  - platform: ft63x6
+    i2c_id: bus_a
+    interrupt_pin: GPIO17
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+    on_touch:
+    - lambda: |-
+          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+              touch.x,
+              touch.y,
+              touch.x_raw,
+              touch.y_raw
+              );
+
+lvgl:
+  rotation: 90
+  # With 8MB PSRAM, we can afford a larger buffer for smoother animations
+  buffer_size: 50%
