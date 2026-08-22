@@ -32,6 +32,8 @@ The main interface provides at-a-glance information for up to 8 dry boxes at onc
 * Current Humidity
 * Filament Type/Color
 
+If you have more than 8 boxes, just create more pages!
+
 There is a secondary interface that allows you to change the Filament Type & Color for a given Box #, this is also editable in Home Assistant.
 
 The display also includes screen/backlight handling so the LCD can be properly blanked when not in use rather than simply displaying an illuminated black UI page.
@@ -40,3 +42,9 @@ The display also includes screen/backlight handling so the LCD can be properly b
 The drybox connects directly to Home Assistant through ESPHome's native API.
 
 This allows sensor readings, controls, and device status to be exposed to Home Assistant while keeping the primary display and monitoring functionality on the ESP32 itself. So Home Assistant is useful, but you don't need a dashboard open just to check the drybox.
+
+## Credit
+I want to give credit to RyanEwen and his esphome-lvgl project. I've used it extensively to help me understand esphome and as a starting point for my own projects. Several files are straight out of his repo.
+
+RyanEwen: https://github.com/RyanEwen
+esphome-lvgl: https://github.com/RyanEwen/esphome-lvgl
