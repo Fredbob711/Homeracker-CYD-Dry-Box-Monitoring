@@ -1,0 +1,50 @@
+button:
+  id: box_${box_num}_btn
+  x: ${x_pos}
+  y: ${y_pos}
+  height: 76
+  width: 76
+
+  widgets:
+    - label:
+        id: box_num_label_${box_num}
+        text: "${box_num}"
+        text_align: LEFT
+        align: TOP_LEFT
+        text_font: orbitron_md
+        text_opa: 50%
+        x: -4
+        y: -8
+
+    - label:
+        id: box_${box_num}_hum_val
+        text: "--%"
+        text_align: CENTER
+        align: TOP_RIGHT
+        y: 4
+        text_font: orbitron_md
+
+    - label:
+        id: box_${box_num}_temp_val
+        text: "--°C"
+        text_align: CENTER
+        align: RIGHT_MID
+        y: 4
+        text_font: orbitron_sm
+
+    - label:
+        id: box_${box_num}_filament_type_val
+        text: "PLA"
+        text_align: CENTER
+        align: BOTTOM_MID
+        y: 0
+        text_font: orbitron_sm
+
+  on_click:
+    then:
+      - lvgl.dropdown.update:
+          id: box_num_dropdown
+          selected_text: "${box_num}"
+
+      - lvgl.page.show:
+          id: drybox_edit
