@@ -1,0 +1,651 @@
+#https://www.lcdwiki.com/2.8inch_ESP32-S3_Display#ESP32_parameters
+esphome:
+  name: mccabe
+  friendly_name: McCabe
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+tca9548a:
+  - id: multiplexer
+    address: 0x70
+    i2c_id: bus_a
+    channels:
+      - bus_id: mux_channel_1
+        channel: 0
+      - bus_id: mux_channel_2
+        channel: 1
+      - bus_id: mux_channel_3
+        channel: 2
+      - bus_id: mux_channel_4
+        channel: 3
+      - bus_id: mux_channel_5
+        channel: 4
+      - bus_id: mux_channel_6
+        channel: 5
+      - bus_id: mux_channel_7
+        channel: 6
+      - bus_id: mux_channel_8
+        channel: 7
+
+sensor:
+  - id: wifi_signal_db
+    name: WiFi Signal
+    platform: wifi_signal
+    update_interval: 60s
+    entity_category: diagnostic
+
+  - id: wifi_signal_strength
+    name: WiFi Strength
+    platform: copy
+    source_id: wifi_signal_db
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+      entity_category: diagnostic
+    ssid:
+      name: Connected SSID
+      entity_category: diagnostic
+    mac_address:
+      name: Mac Address
+      entity_category: diagnostic
+
+globals:
+  - id: homeassistant_ip
+    type: std::string
+  - id: last_page
+    type: int
+    restore_value: no
+    initial_value: '1'
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: "Backlight"
+    id: backlight
+    restore_mode: RESTORE_DEFAULT_ON
+    default_transition_length: 0s
+    on_turn_off:
+      then:
+        - lvgl.widget.hide: titlebar
+        - lvgl.widget.hide: navbar
+
+        - lvgl.page.show:
+            id: screen_off
+            animation: NONE
+
+    on_turn_on:
+      then:
+        - lvgl.widget.show: titlebar
+        - lvgl.widget.show: navbar
+
+        - if:
+            condition:
+              lambda: 'return id(last_page) == 1;'
+            then:
+              - lvgl.page.show:
+                  id: group_1
+                  animation: FADE_IN
+        - if:
+            condition:
+              lambda: 'return id(last_page) == 2;'
+            then:
+              - lvgl.page.show:
+                  id: drybox_edit
+                  animation: FADE_IN
+
+packages:
+  device: !include devices/hosyand_esp32s3_28.yaml
+  header_sensors: !include { file: layout/widgets/header_sensor.yaml }
+  boot_screen_sensors: !include { file: layout/widgets/boot_screen_sensor.yaml }
+  box_1: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 1
+      box_name: "Box 1"
+  box_2: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 2
+      box_name: "Box 2"
+  box_3: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 3
+      box_name: "Box 3"
+  box_4: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 4
+      box_name: "Box 4"
+  box_5: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 5
+      box_name: "Box 5"
+  box_6: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 6
+      box_name: "Box 6"
+  box_7: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 7
+      box_name: "Box 7"
+  box_8: !include
+    file: templates/drybox_template.yaml
+    vars:
+      box_num: 8
+      box_name: "Box 8"
+
+number:
+  - platform: template
+    id: red_val
+    name: "Red Value"
+    optimistic: true
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: 255
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: color_preview_box
+            bg_color: !lambda 'return lv_color_make((uint8_t)id(red_val).state, (uint8_t)id(green_val).state, (uint8_t)id(blue_val).state);'
+
+  - platform: template
+    id: green_val
+    name: "Green Value"
+    optimistic: true
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: 0
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: color_preview_box
+            bg_color: !lambda 'return lv_color_make((uint8_t)id(red_val).state, (uint8_t)id(green_val).state, (uint8_t)id(blue_val).state);'
+
+  - platform: template
+    id: blue_val
+    name: "Blue Value"
+    optimistic: true
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: 0
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: color_preview_box
+            bg_color: !lambda 'return lv_color_make((uint8_t)id(red_val).state, (uint8_t)id(green_val).state, (uint8_t)id(blue_val).state);'
+
+font: !include
+  file: layout/fonts/fonts.yaml
+  vars:
+    text_sm: 12
+    text_md: 16
+    text_lg: 22
+    text_xl: 26
+    text_xxl: 30
+    icons_sm: 18
+    icons_md: 24
+    icons_lg: 32
+    icons_xl: 40
+    icons_xxl: 48
+
+.sizing:
+  - &nav_widget_vars
+    height: 40
+    padding: 4
+
+  - &page_styles
+    <<: !include layout/styles/page_styles.yaml
+    pad_top: 40
+    pad_bottom: 40
+
+  - &container_styles
+    <<: !include layout/styles/container_styles.yaml
+    pad_top: 0
+    pad_bottom: 0
+    pad_left: 4
+    pad_right: 4
+    scrollable: false # prevents scrollbars on pages where space is used up to the last pixel
+
+  - &button_layout
+    <<: !include layout/styles/button_layout.yaml
+    pad_column: 4
+    pad_row: 4
+
+  - &button_widget_vars
+    width: 76
+    height: 76
+
+script:
+  - id: go_home
+    then:
+      - lvgl.widget.hide: boot_screen
+      - lvgl.page.show: group_1
+  - id: show_update_popup
+    mode: restart
+    then:
+      - lvgl.widget.show: update_popup
+      - delay: 1200ms
+      - lvgl.widget.hide: update_popup
+
+lvgl:
+  rotation: 90
+  default_font: orbitron_md
+  theme: !include layout/styles/theme.yaml
+  top_layer:
+    widgets:
+      - <<: !include { file: layout/widgets/header.yaml, vars: { <<: *nav_widget_vars } }
+      - <<: !include { file: layout/widgets/footer.yaml, vars: { <<: *nav_widget_vars } }
+      - obj:
+          id: update_popup
+          align: CENTER
+          width: 180
+          height: 70
+          bg_color: 0x202020
+          bg_opa: COVER
+          border_color: 0x00CC66
+          border_width: 2
+          radius: 10
+          hidden: true
+          widgets:
+            - label:
+                id: update_popup_label
+                align: CENTER
+                text: "Updated!"
+                text_font: orbitron_md
+                text_color: 0xFFFFFF
+  pages:
+    - id: screen_off
+      bg_color: 0x000000
+      bg_opa: COVER
+      skip: true
+    - id: splash
+      widgets:
+        - <<: !include { file: layout/widgets/boot_screen.yaml }
+      skip: true
+      on_load:
+        - script.execute: go_home
+      
+    - id: group_1
+      <<: *page_styles
+      on_load:
+        - lambda: |-
+            id(last_page) = 1;
+        - lvgl.label.update:
+            id: page_title
+            text: Group 1
+      widgets:
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 1
+              x_pos: 2
+              y_pos: 2
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 2
+              x_pos: 82
+              y_pos: 2
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 3
+              x_pos: 162
+              y_pos: 2
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 4
+              x_pos: 242
+              y_pos: 2
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 5
+              x_pos: 2
+              y_pos: 82
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 6
+              x_pos: 82
+              y_pos: 82
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 7
+              x_pos: 162
+              y_pos: 82
+        
+        - <<: !include
+            file: layout/widgets/drybox_button.yaml
+            vars:
+              box_num: 8
+              x_pos: 242
+              y_pos: 82
+                  
+    - id: drybox_edit
+      <<: *page_styles
+      on_load:
+        - lambda: |-
+            id(last_page) = 2;
+        - lvgl.label.update:
+            id: page_title
+            text: Drybox Edit
+      widgets:
+        - label:
+            align: TOP_LEFT
+            text: "Box #:"
+            text_font: orbitron_md
+            text_align: RIGHT
+            y: 12
+            width: 72
+            text_color: 0xFFFFFF
+            text_opa: 100%
+        - dropdown:
+            id: box_num_dropdown
+            align: TOP_LEFT
+            x: 76
+            y: 6
+            text_font: orbitron_sm
+            width: 60
+            height: 32
+            symbol: "\U000F0140"
+            dropdown_list:
+              text_font: orbitron_sm
+              max_height: 110
+              text_line_space: 8
+            options:
+              - "--"
+              - "1"
+              - "2"
+              - "3"
+              - "4"
+              - "5"
+              - "6"
+              - "7"
+              - "8"
+            on_value:
+              then:
+                - if:
+                    condition:
+                      lambda: 'return x == 1;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 1
+                - if:
+                    condition:
+                      lambda: 'return x == 2;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 2
+                - if:
+                    condition:
+                      lambda: 'return x == 3;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 3
+                - if:
+                    condition:
+                      lambda: 'return x == 4;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 4
+                - if:
+                    condition:
+                      lambda: 'return x == 5;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 5
+                - if:
+                    condition:
+                      lambda: 'return x == 6;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 6
+                - if:
+                    condition:
+                      lambda: 'return x == 7;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 7
+                - if:
+                    condition:
+                      lambda: 'return x == 8;'
+                    then: !include
+                      file: layout/actions/load_drybox.yaml
+                      vars:
+                        box_num: 8
+        - label:
+            align: TOP_LEFT
+            text: "Filament:"
+            text_font: orbitron_md
+            text_align: RIGHT
+            width: 80
+            y: 10
+            x: 140
+            text_color: 0xFFFFFF
+            text_opa: 100%
+        - dropdown:
+            id: filament_type_dropdown
+            align: TOP_LEFT
+            y: 6
+            x: 232
+            text_font: orbitron_sm
+            width: 88
+            height: 32
+            symbol: "\U000F0140"
+            dropdown_list:
+              text_font: orbitron_sm
+              max_height: 110
+              text_line_space: 8
+            options: !include templates/filament_types.yaml
+        - slider:
+            id: red_slider
+            align: LEFT_MID
+            x: 16
+            y: -16
+            width: 200
+            min_value: 0
+            max_value: 255
+            indicator:
+              bg_color: 0xFF0000
+            knob:
+              bg_color: 0xFF0000
+            on_value:
+              then:
+                - number.set:
+                    id: red_val
+                    value: !lambda 'return x;'
+        - slider:
+            id: green_slider
+            align: LEFT_MID
+            x: 16
+            y: 20
+            width: 200
+            min_value: 0
+            max_value: 255
+            indicator:
+              bg_color: 0x00FF00
+            knob:
+              bg_color: 0x00FF00
+            on_value:
+              then:
+                - number.set:
+                    id: green_val
+                    value: !lambda 'return x;'
+        - slider:
+            id: blue_slider
+            align: LEFT_MID
+            x: 16
+            y: 56
+            width: 200
+            min_value: 0
+            max_value: 255
+            indicator:
+              bg_color: 0x0000FF
+            knob:
+              bg_color: 0x0000FF
+            on_value:
+              then:
+                - number.set:
+                    id: blue_val
+                    value: !lambda 'return x;'
+        - obj:
+            id: color_preview_box
+            align: RIGHT_MID
+            y: -10
+            x: -8
+            width: 80
+            height: 40
+            bg_opa: COVER
+            bg_color: !lambda 'return lv_color_make(255, 0, 0);' # Default Red
+            border_width: 2
+            border_color: 0xFFFFFF
+            radius: 8
+        - button:
+            id: update_drybox
+            align: BOTTOM_RIGHT
+            width: 80
+            x: -8
+            y: -16
+            text_color: 0xFFFFFF
+            radius: 8
+            border_color: 0xFFFFFF
+            widgets:
+              - label:
+                  bg_color: 0x000000
+                  text: "Update"
+                  text_align: CENTER
+                  align: CENTER
+                  text_color: 0xFFFFFF
+                  bg_opa: 0%
+                  border_opa: 100%
+            on_click:
+              then:
+                - lambda: |-
+                    int box_num = std::stoi(id(box_num_dropdown).get_selected_text());
+                    std::string filament_str = id(filament_type_dropdown).get_selected_text();
+        
+                    // 3. Get RGB values from sliders/numbers
+                    uint8_t r = (uint8_t)id(red_val).state;
+                    uint8_t g = (uint8_t)id(green_val).state;
+                    uint8_t b = (uint8_t)id(blue_val).state;
+        
+                    // 4. Route values to the corresponding Box entities
+                    switch (box_num) {
+                      case 1: {// Box 1
+                        id(box_1_filament_type).make_call().set_option(filament_str).perform();
+                        auto call1 = id(box_1_color).turn_on();
+                        call1.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call1.perform();
+                        break;
+                      }
+                      case 2: {// Box 2
+                        id(box_2_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_2_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      case 3: {// Box 3
+                        id(box_3_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_3_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      case 4: {// Box 4
+                        id(box_4_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_4_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      case 5: {// Box 5
+                        id(box_5_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_5_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      case 6: {// Box 6
+                        id(box_6_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_6_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      case 7: {// Box 7
+                        id(box_7_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_7_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      case 8: {// Box 8
+                        id(box_8_filament_type).make_call().set_option(filament_str).perform();
+                        auto call2 = id(box_8_color).turn_on();
+                        call2.set_rgb(r / 255.0f, g / 255.0f, b / 255.0f);
+                        call2.perform();
+                        break;
+                      }
+                      default: {
+                        ESP_LOGW("drybox_edit", "Invalid box index selected: %d", box_num);
+                        break;
+                      }
+                    }
+                - lvgl.label.update:
+                    id: update_popup_label
+                    text: !lambda |-
+                      return str_sprintf(
+                        "Box %s Updated!",
+                        id(box_num_dropdown).get_selected_text().c_str()
+                      );
+            
+                - script.execute: show_update_popup
