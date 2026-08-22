@@ -1,0 +1,19 @@
+- lvgl.dropdown.update:
+    id: filament_type_dropdown
+    selected_text: !lambda |-
+      return id(box_${box_num}_filament_type).current_option();
+
+- lvgl.slider.update:
+    id: red_slider
+    value: !lambda |-
+      return id(box_${box_num}_color).remote_values.get_red() * 255.0f;
+
+- lvgl.slider.update:
+    id: green_slider
+    value: !lambda |-
+      return id(box_${box_num}_color).remote_values.get_green() * 255.0f;
+
+- lvgl.slider.update:
+    id: blue_slider
+    value: !lambda |-
+      return id(box_${box_num}_color).remote_values.get_blue() * 255.0f;
