@@ -4,6 +4,12 @@ So my goal with this was to build an ESP32 device that could monitor the temp/hu
 
 Obligatory Reddit post explaining what I did: 
 
+## Attribution
+I want to give credit to RyanEwen and his esphome-lvgl project. I've used it extensively to help me understand esphome and as a starting point for my own projects. Several files are straight out of his repo.
+
+RyanEwen: https://github.com/RyanEwen
+esphome-lvgl: https://github.com/RyanEwen/esphome-lvgl
+
 ## Features
 
 * 🌡️ Temperature monitoring
@@ -42,9 +48,3 @@ The display also includes screen/backlight handling so the LCD can be properly b
 The drybox connects directly to Home Assistant through ESPHome's native API.
 
 This allows sensor readings, controls, and device status to be exposed to Home Assistant while keeping the primary display and monitoring functionality on the ESP32 itself. So Home Assistant is useful, but you don't need a dashboard open just to check the drybox.
-
-## Credit
-I want to give credit to RyanEwen and his esphome-lvgl project. I've used it extensively to help me understand esphome and as a starting point for my own projects. Several files are straight out of his repo.
-
-RyanEwen: https://github.com/RyanEwen
-esphome-lvgl: https://github.com/RyanEwen/esphome-lvgl
