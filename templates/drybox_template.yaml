@@ -2,23 +2,13 @@ substitutions:
   box_num: "1"
   box_name: "Box ${box_num}"
 
-# Shared options anchor inside the package
-.filament_options: &filament_options
-  - "PLA"
-  - "PETG"
-  - "ASA"
-  - "HT-PLA"
-  - "ABS"
-  - "TPU"
-  - "PC"
-
 select:
   - platform: template
     name: "${box_name} Filament Type"
     id: box_${box_num}_filament_type
     optimistic: true
     restore_value: true
-    options: *filament_options
+    options: !include filament_types.yaml
     initial_option: "PLA"
     on_value:
       then:
@@ -57,9 +47,11 @@ light:
             border_color: !lambda |-
               auto color = id(box_${box_num}_color).remote_values;
 
-              uint8_t r = static_cast<uint8_t>(color.get_red() * 255.0f);
-              uint8_t g = static_cast<uint8_t>(color.get_green() * 255.0f);
-              uint8_t b = static_cast<uint8_t>(color.get_blue() * 255.0f);
+              float cb = color.get_color_brightness();
+
+              uint8_t r = static_cast<uint8_t>(color.get_red() * cb * 255.0f);
+              uint8_t g = static_cast<uint8_t>(color.get_green() * cb * 255.0f);
+              uint8_t b = static_cast<uint8_t>(color.get_blue() * cb * 255.0f);
 
               return lv_color_make(r, g, b);
 
